@@ -1,7 +1,9 @@
-// DSO header parsing + game version detection.
+// DSO header parsing, game version detection, and full decompilation entry.
 // Source mapping: github.com/Elletra/dso-sharp Constants.cs + Versions/GameVersion.cs
+// Full TorqueScript decompilation lives in ./decompiler.ts.
 
 import { unzipSync } from "fflate";
+import { decompile as decompileDso, isDecompileSupported } from "./decompiler";
 
 export type GameIdentifier =
   | "TGE10"
@@ -46,7 +48,6 @@ export interface DsoFileResult {
 
 export function readDsoVersion(bytes: Uint8Array): number | null {
   if (bytes.length < 4) return null;
-  // Torque DSO header begins with a 32-bit little-endian version.
   const v = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
   return v.getUint32(0, true);
 }
@@ -85,45 +86,67 @@ export async function processUpload(file: File): Promise<DsoFileResult[]> {
   return [{ name: file.name, size: file.size, version: null, candidates: [], bytes: null, error: "Unsupported file type. Upload a .dso or .zip file." }];
 }
 
-// Build a plaintext preview. Full decompilation (control-flow analysis, AST
-// builder, code generator from dso-sharp) is not implemented in this build —
-// surface the header info + a hex-style preview of the first bytes so users
-// see something honest rather than a fake script.
+/**
+ * Build the decompiled output. For supported game versions (TGE 1.0–1.3,
+ * Tribes 2, The Forgettable Dungeon) this runs the full bytecode reader →
+ * control-flow analyzer → AST builder → TorqueScript code generator pipeline
+ * ported from dso-sharp. Other versions surface a header summary + hex
+ * preview.
+ */
 export function buildPreview(result: DsoFileResult, bytes: Uint8Array | null): string {
-  const lines: string[] = [];
-  lines.push(`// File: ${result.name}`);
-  lines.push(`// Size: ${result.size.toLocaleString()} bytes`);
-  if (result.version !== null) {
-    lines.push(`// DSO version: ${result.version}`);
-  }
+  const header: string[] = [];
+  header.push(`// File: ${result.name}`);
+  header.push(`// Size: ${result.size.toLocaleString()} bytes`);
+  if (result.version !== null) header.push(`// DSO version: ${result.version}`);
   if (result.candidates.length === 1) {
-    lines.push(`// Game: ${GAME_NAMES[result.candidates[0]]}`);
+    header.push(`// Game: ${GAME_NAMES[result.candidates[0]]}`);
   } else if (result.candidates.length > 1) {
-    lines.push(`// Game (ambiguous): ${result.candidates.map((c) => GAME_NAMES[c]).join(" | ")}`);
+    header.push(`// Game (ambiguous): ${result.candidates.map((c) => GAME_NAMES[c]).join(" | ")}`);
   } else if (result.version !== null) {
-    lines.push(`// Game: unknown (version ${result.version} not in dso-sharp map)`);
+    header.push(`// Game: unknown (version ${result.version} not in dso-sharp map)`);
   }
-  if (result.error) lines.push(`// Error: ${result.error}`);
-  lines.push("");
-  lines.push("// ---------------------------------------------------------------");
-  lines.push("// Decompiled script output");
-  lines.push("// ---------------------------------------------------------------");
-  lines.push("// Full TorqueScript decompilation is not implemented in this");
-  lines.push("// web port yet. Version detection runs against the dso-sharp");
-  lines.push("// header map; producing readable source requires the bytecode");
-  lines.push("// reader, control-flow analyzer, AST builder, and code generator");
-  lines.push("// from Elletra/dso-sharp to be ported to TypeScript.");
-  lines.push("");
+  if (result.error) header.push(`// Error: ${result.error}`);
+  header.push("");
 
-  if (bytes && bytes.length > 0) {
-    lines.push("// First 256 bytes (hex):");
-    const slice = bytes.slice(0, 256);
-    for (let i = 0; i < slice.length; i += 16) {
-      const row = slice.slice(i, i + 16);
-      const hex = Array.from(row).map((b) => b.toString(16).padStart(2, "0")).join(" ");
-      const ascii = Array.from(row).map((b) => (b >= 32 && b < 127 ? String.fromCharCode(b) : ".")).join("");
-      lines.push(`// ${i.toString(16).padStart(4, "0")}  ${hex.padEnd(48)}  ${ascii}`);
+  const supported = result.candidates.find(isDecompileSupported);
+  if (bytes && supported) {
+    const out = decompileDso(bytes);
+    if (out.ok && out.source !== undefined) {
+      header.push("// ---------------------------------------------------------------");
+      header.push(`// Decompiled TorqueScript (${out.stats?.instructionCount ?? 0} instructions, ${out.stats?.codeSize ?? 0} ops)`);
+      header.push("// ---------------------------------------------------------------");
+      header.push("");
+      return header.join("\n") + out.source;
     }
+    header.push("// ---------------------------------------------------------------");
+    header.push("// Decompilation failed");
+    header.push("// ---------------------------------------------------------------");
+    header.push(`// ${out.error ?? "Unknown error"}`);
+    header.push("");
+    return header.join("\n") + renderHexPreview(bytes);
+  }
+
+  header.push("// ---------------------------------------------------------------");
+  header.push("// Decompiled script output");
+  header.push("// ---------------------------------------------------------------");
+  if (result.candidates.length > 0) {
+    header.push(`// Full decompilation isn't ported for: ${result.candidates.map((c) => GAME_NAMES[c]).join(", ")}.`);
+    header.push("// Supported: TGE 1.0–1.3, Tribes 2, The Forgettable Dungeon.");
+  } else {
+    header.push("// Unknown DSO version — cannot decompile.");
+  }
+  header.push("");
+  return header.join("\n") + (bytes ? renderHexPreview(bytes) : "");
+}
+
+function renderHexPreview(bytes: Uint8Array): string {
+  const lines: string[] = ["// First 256 bytes (hex):"];
+  const slice = bytes.slice(0, 256);
+  for (let i = 0; i < slice.length; i += 16) {
+    const row = slice.slice(i, i + 16);
+    const hex = Array.from(row).map((b) => b.toString(16).padStart(2, "0")).join(" ");
+    const ascii = Array.from(row).map((b) => (b >= 32 && b < 127 ? String.fromCharCode(b) : ".")).join("");
+    lines.push(`// ${i.toString(16).padStart(4, "0")}  ${hex.padEnd(48)}  ${ascii}`);
   }
   return lines.join("\n");
 }
