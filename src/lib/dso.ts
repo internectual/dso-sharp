@@ -1,7 +1,7 @@
 // DSO header parsing + game version detection.
 // Source mapping: github.com/Elletra/dso-sharp Constants.cs + Versions/GameVersion.cs
 
-import { unzipSync, strFromU8 } from "fflate";
+import { unzipSync } from "fflate";
 
 export type GameIdentifier =
   | "TGE10"
