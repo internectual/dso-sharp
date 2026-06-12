@@ -54,10 +54,10 @@ export function readDsoVersion(bytes: Uint8Array): number | null {
 export function identifyDso(name: string, bytes: Uint8Array): DsoFileResult {
   const version = readDsoVersion(bytes);
   if (version === null) {
-    return { name, size: bytes.length, version: null, candidates: [], error: "File too small to read DSO header" };
+    return { name, size: bytes.length, version: null, candidates: [], bytes, error: "File too small to read DSO header" };
   }
   const candidates = VERSION_MAP[version] ?? [];
-  return { name, size: bytes.length, version, candidates };
+  return { name, size: bytes.length, version, candidates, bytes };
 }
 
 export async function processUpload(file: File): Promise<DsoFileResult[]> {
@@ -73,7 +73,7 @@ export async function processUpload(file: File): Promise<DsoFileResult[]> {
       results.push(identifyDso(name, data));
     }
     if (results.length === 0) {
-      return [{ name: file.name, size: file.size, version: null, candidates: [], error: "No .dso files found in archive" }];
+      return [{ name: file.name, size: file.size, version: null, candidates: [], bytes: null, error: "No .dso files found in archive" }];
     }
     return results;
   }
@@ -82,7 +82,7 @@ export async function processUpload(file: File): Promise<DsoFileResult[]> {
     return [identifyDso(file.name, buf)];
   }
 
-  return [{ name: file.name, size: file.size, version: null, candidates: [], error: "Unsupported file type. Upload a .dso or .zip file." }];
+  return [{ name: file.name, size: file.size, version: null, candidates: [], bytes: null, error: "Unsupported file type. Upload a .dso or .zip file." }];
 }
 
 // Build a plaintext preview. Full decompilation (control-flow analysis, AST
