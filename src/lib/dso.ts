@@ -40,6 +40,7 @@ export interface DsoFileResult {
   size: number;
   version: number | null;
   candidates: GameIdentifier[];
+  bytes: Uint8Array | null;
   error?: string;
 }
 
