@@ -1538,9 +1538,10 @@ export class Builder {
     this.frameStack = [];
     this.nodeStack = [];
     this.run();
-    const list = [...this.nodeStack];
-    list.reverse();
-    return list;
+    // JS array used as stack is already in push order (bottom→top).
+    // dso-sharp's C# Stack.ToList() pops top→bottom then Reverse()s to
+    // bottom→top; we already have that, so no reverse needed.
+    return [...this.nodeStack];
   }
 
   private run() {
