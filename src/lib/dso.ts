@@ -65,25 +65,45 @@ export async function processUpload(file: File): Promise<DsoFileResult[]> {
   const buf = new Uint8Array(await file.arrayBuffer());
   const lower = file.name.toLowerCase();
 
-  if (lower.endsWith(".zip")) {
-    const entries = unzipSync(buf, {
-      filter: (f) => f.name.toLowerCase().endsWith(".dso"),
-    });
-    const results: DsoFileResult[] = [];
-    for (const [name, data] of Object.entries(entries)) {
-      results.push(identifyDso(name, data));
-    }
-    if (results.length === 0) {
-      return [{ name: file.name, size: file.size, version: null, candidates: [], bytes: null, error: "No .dso files found in archive" }];
-    }
-    return results;
-  }
-
+  // Single .dso file
   if (lower.endsWith(".dso")) {
     return [identifyDso(file.name, buf)];
   }
 
-  return [{ name: file.name, size: file.size, version: null, candidates: [], bytes: null, error: "Unsupported file type. Upload a .dso or .zip file." }];
+  // Anything else: assume zip archive and surface every entry in a tree.
+  try {
+    const entries = unzipSync(buf);
+    const results: DsoFileResult[] = [];
+    for (const [name, data] of Object.entries(entries)) {
+      // Skip directory entries (zip stores them with trailing slash, empty data)
+      if (name.endsWith("/")) continue;
+      if (name.toLowerCase().endsWith(".dso")) {
+        results.push(identifyDso(name, data));
+      } else {
+        results.push({
+          name,
+          size: data.length,
+          version: null,
+          candidates: [],
+          bytes: data,
+          error: "Not a .dso file",
+        });
+      }
+    }
+    if (results.length === 0) {
+      return [{ name: file.name, size: file.size, version: null, candidates: [], bytes: null, error: "Archive contained no files" }];
+    }
+    return results;
+  } catch (e) {
+    return [{
+      name: file.name,
+      size: file.size,
+      version: null,
+      candidates: [],
+      bytes: null,
+      error: `Could not read as .dso or as a zip archive: ${e instanceof Error ? e.message : String(e)}`,
+    }];
+  }
 }
 
 /**

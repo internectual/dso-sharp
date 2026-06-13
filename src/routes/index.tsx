@@ -107,7 +107,7 @@ function Index() {
       >
         <input
           type="file"
-          accept=".dso,.zip,application/zip"
+          accept="*/*"
           className="sr-only"
           onChange={onInput}
         />
@@ -129,44 +129,39 @@ function Index() {
         <section className="mt-8 grid gap-6 lg:grid-cols-[280px_1fr]">
           <aside className="rounded-xl border bg-surface/60 p-3">
             <div className="px-2 pb-2 text-xs uppercase tracking-widest text-muted-foreground">
-              Files ({results.length})
+              Archive ({results.length})
             </div>
-            <ul className="flex max-h-[60vh] flex-col gap-1 overflow-auto">
-              {results.map((r, i) => (
-                <li key={`${r.name}-${i}`}>
-                  <button
-                    onClick={() => setSelected(i)}
-                    className={`w-full rounded-md px-3 py-2 text-left font-mono text-xs transition-colors ${
-                      i === selected
-                        ? "bg-accent/15 text-foreground"
-                        : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
-                    }`}
-                  >
-                    <div className="truncate">{r.name}</div>
-                    <div className="mt-0.5 flex items-center justify-between text-[10px] text-muted-foreground">
-                      <span>{formatBytes(r.size)}</span>
-                      <span>{r.version !== null ? `v${r.version}` : "—"}</span>
-                    </div>
-                  </button>
-                </li>
-              ))}
-            </ul>
+            <div className="max-h-[60vh] overflow-auto pr-1">
+              <FileTree
+                results={results}
+                selected={selected}
+                onSelect={setSelected}
+              />
+            </div>
           </aside>
 
           <div className="space-y-4">
             {current && <VersionCard result={current} />}
             {current && (
               <div className="overflow-hidden rounded-xl border bg-surface/60">
-                <div className="flex items-center justify-between border-b border-border px-4 py-2.5">
-                  <div className="font-mono text-xs uppercase tracking-widest text-muted-foreground">
-                    Decompiled output
+                <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-2.5">
+                  <div className="truncate font-mono text-xs uppercase tracking-widest text-muted-foreground">
+                    {current.name}
                   </div>
-                  <button
-                    onClick={() => navigator.clipboard.writeText(preview)}
-                    className="rounded-md border border-border px-2.5 py-1 font-mono text-[11px] text-muted-foreground transition-colors hover:border-accent hover:text-foreground"
-                  >
-                    Copy
-                  </button>
+                  <div className="flex shrink-0 items-center gap-2">
+                    <button
+                      onClick={() => navigator.clipboard.writeText(preview)}
+                      className="rounded-md border border-border px-2.5 py-1 font-mono text-[11px] text-muted-foreground transition-colors hover:border-accent hover:text-foreground"
+                    >
+                      Copy
+                    </button>
+                    <button
+                      onClick={() => downloadText(preview, downloadName(current.name))}
+                      className="rounded-md border border-border px-2.5 py-1 font-mono text-[11px] text-muted-foreground transition-colors hover:border-accent hover:text-foreground"
+                    >
+                      Download
+                    </button>
+                  </div>
                 </div>
                 <pre className="max-h-[60vh] overflow-auto px-4 py-4 font-mono text-[12.5px] leading-relaxed text-surface-foreground">
                   {preview}
@@ -238,5 +233,131 @@ function VersionCard({ result }: { result: DsoFileResult }) {
         <p className="mt-3 text-xs text-destructive">{result.error}</p>
       )}
     </div>
+  );
+}
+
+function downloadName(name: string): string {
+  const base = name.split("/").pop() ?? name;
+  return base.toLowerCase().endsWith(".dso") ? base.slice(0, -4) : `${base}.txt`;
+}
+
+function downloadText(text: string, filename: string) {
+  const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+interface TreeNode {
+  name: string;
+  path: string;
+  children: Map<string, TreeNode>;
+  fileIndex?: number;
+  result?: DsoFileResult;
+}
+
+function buildTree(results: DsoFileResult[]): TreeNode {
+  const root: TreeNode = { name: "", path: "", children: new Map() };
+  results.forEach((r, idx) => {
+    const parts = r.name.split("/").filter(Boolean);
+    let node = root;
+    parts.forEach((part, i) => {
+      let child = node.children.get(part);
+      if (!child) {
+        child = { name: part, path: parts.slice(0, i + 1).join("/"), children: new Map() };
+        node.children.set(part, child);
+      }
+      node = child;
+    });
+    node.fileIndex = idx;
+    node.result = r;
+  });
+  return root;
+}
+
+function FileTree({
+  results,
+  selected,
+  onSelect,
+}: {
+  results: DsoFileResult[];
+  selected: number;
+  onSelect: (i: number) => void;
+}) {
+  const root = useMemo(() => buildTree(results), [results]);
+  return (
+    <ul className="font-mono text-xs">
+      {Array.from(root.children.values()).map((c) => (
+        <TreeNodeView key={c.path} node={c} depth={0} selected={selected} onSelect={onSelect} />
+      ))}
+    </ul>
+  );
+}
+
+function TreeNodeView({
+  node,
+  depth,
+  selected,
+  onSelect,
+}: {
+  node: TreeNode;
+  depth: number;
+  selected: number;
+  onSelect: (i: number) => void;
+}) {
+  const [open, setOpen] = useState(true);
+  const isFile = node.fileIndex !== undefined;
+  const isSelected = isFile && node.fileIndex === selected;
+  const pad = { paddingLeft: `${depth * 12 + 6}px` };
+
+  if (isFile) {
+    const r = node.result!;
+    return (
+      <li>
+        <button
+          onClick={() => onSelect(node.fileIndex!)}
+          style={pad}
+          className={`flex w-full items-center justify-between rounded-md py-1 pr-2 text-left transition-colors ${
+            isSelected
+              ? "bg-accent/15 text-foreground"
+              : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+          }`}
+          title={r.error ?? ""}
+        >
+          <span className="truncate">
+            <span className="mr-1 text-muted-foreground/60">·</span>
+            {node.name}
+          </span>
+          <span className="ml-2 shrink-0 text-[10px] text-muted-foreground/70">
+            {r.version !== null ? `v${r.version}` : ""}
+          </span>
+        </button>
+      </li>
+    );
+  }
+
+  return (
+    <li>
+      <button
+        onClick={() => setOpen((o) => !o)}
+        style={pad}
+        className="flex w-full items-center gap-1 rounded-md py-1 text-left text-muted-foreground hover:text-foreground"
+      >
+        <span className="inline-block w-3 text-[10px]">{open ? "▾" : "▸"}</span>
+        <span className="truncate">{node.name}/</span>
+      </button>
+      {open && (
+        <ul>
+          {Array.from(node.children.values()).map((c) => (
+            <TreeNodeView key={c.path} node={c} depth={depth + 1} selected={selected} onSelect={onSelect} />
+          ))}
+        </ul>
+      )}
+    </li>
   );
 }
