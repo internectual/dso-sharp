@@ -69,7 +69,7 @@ function Index() {
   );
 
   return (
-    <main className="mx-auto min-h-screen max-w-6xl px-6 py-10">
+    <main className="mx-auto min-h-screen w-full max-w-6xl overflow-x-clip px-4 py-10 sm:px-6">
       <header className="mb-10">
         <div className="flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-muted-foreground">
           <span className="inline-block size-1.5 rounded-full bg-accent" />
@@ -126,7 +126,7 @@ function Index() {
       )}
 
       {results.length > 0 && (
-        <section className="mt-8 grid gap-6 lg:grid-cols-[280px_1fr]">
+        <section className="mt-8 grid grid-cols-[minmax(0,1fr)] gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
           <aside className="rounded-xl border bg-surface/60 p-3">
             <div className="px-2 pb-2 text-xs uppercase tracking-widest text-muted-foreground">
               Archive ({results.length})
@@ -163,7 +163,7 @@ function Index() {
                     </button>
                   </div>
                 </div>
-                <pre className="max-h-[60vh] overflow-x-auto overflow-y-auto whitespace-pre px-4 py-4 font-mono text-[12.5px] leading-relaxed text-surface-foreground">
+                <pre className="max-h-[60vh] w-full max-w-full overflow-auto whitespace-pre px-4 py-4 font-mono text-[12.5px] leading-relaxed text-surface-foreground">
                   {preview}
                 </pre>
               </div>
