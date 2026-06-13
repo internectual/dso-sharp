@@ -129,44 +129,39 @@ function Index() {
         <section className="mt-8 grid gap-6 lg:grid-cols-[280px_1fr]">
           <aside className="rounded-xl border bg-surface/60 p-3">
             <div className="px-2 pb-2 text-xs uppercase tracking-widest text-muted-foreground">
-              Files ({results.length})
+              Archive ({results.length})
             </div>
-            <ul className="flex max-h-[60vh] flex-col gap-1 overflow-auto">
-              {results.map((r, i) => (
-                <li key={`${r.name}-${i}`}>
-                  <button
-                    onClick={() => setSelected(i)}
-                    className={`w-full rounded-md px-3 py-2 text-left font-mono text-xs transition-colors ${
-                      i === selected
-                        ? "bg-accent/15 text-foreground"
-                        : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
-                    }`}
-                  >
-                    <div className="truncate">{r.name}</div>
-                    <div className="mt-0.5 flex items-center justify-between text-[10px] text-muted-foreground">
-                      <span>{formatBytes(r.size)}</span>
-                      <span>{r.version !== null ? `v${r.version}` : "—"}</span>
-                    </div>
-                  </button>
-                </li>
-              ))}
-            </ul>
+            <div className="max-h-[60vh] overflow-auto pr-1">
+              <FileTree
+                results={results}
+                selected={selected}
+                onSelect={setSelected}
+              />
+            </div>
           </aside>
 
           <div className="space-y-4">
             {current && <VersionCard result={current} />}
             {current && (
               <div className="overflow-hidden rounded-xl border bg-surface/60">
-                <div className="flex items-center justify-between border-b border-border px-4 py-2.5">
-                  <div className="font-mono text-xs uppercase tracking-widest text-muted-foreground">
-                    Decompiled output
+                <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-2.5">
+                  <div className="truncate font-mono text-xs uppercase tracking-widest text-muted-foreground">
+                    {current.name}
                   </div>
-                  <button
-                    onClick={() => navigator.clipboard.writeText(preview)}
-                    className="rounded-md border border-border px-2.5 py-1 font-mono text-[11px] text-muted-foreground transition-colors hover:border-accent hover:text-foreground"
-                  >
-                    Copy
-                  </button>
+                  <div className="flex shrink-0 items-center gap-2">
+                    <button
+                      onClick={() => navigator.clipboard.writeText(preview)}
+                      className="rounded-md border border-border px-2.5 py-1 font-mono text-[11px] text-muted-foreground transition-colors hover:border-accent hover:text-foreground"
+                    >
+                      Copy
+                    </button>
+                    <button
+                      onClick={() => downloadText(preview, downloadName(current.name))}
+                      className="rounded-md border border-border px-2.5 py-1 font-mono text-[11px] text-muted-foreground transition-colors hover:border-accent hover:text-foreground"
+                    >
+                      Download
+                    </button>
+                  </div>
                 </div>
                 <pre className="max-h-[60vh] overflow-auto px-4 py-4 font-mono text-[12.5px] leading-relaxed text-surface-foreground">
                   {preview}
