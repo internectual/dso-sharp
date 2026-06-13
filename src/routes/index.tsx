@@ -140,7 +140,7 @@ function Index() {
             </div>
           </aside>
 
-          <div className="space-y-4">
+          <div className="min-w-0 space-y-4">
             {current && <VersionCard result={current} />}
             {current && (
               <div className="overflow-hidden rounded-xl border bg-surface/60">
@@ -163,7 +163,7 @@ function Index() {
                     </button>
                   </div>
                 </div>
-                <pre className="max-h-[60vh] overflow-auto px-4 py-4 font-mono text-[12.5px] leading-relaxed text-surface-foreground">
+                <pre className="max-h-[60vh] overflow-x-auto overflow-y-auto whitespace-pre px-4 py-4 font-mono text-[12.5px] leading-relaxed text-surface-foreground">
                   {preview}
                 </pre>
               </div>
