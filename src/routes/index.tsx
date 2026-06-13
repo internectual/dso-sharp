@@ -69,7 +69,7 @@ function Index() {
   );
 
   return (
-    <main className="mx-auto min-h-screen max-w-6xl px-6 py-10">
+    <main className="mx-auto min-h-screen w-full max-w-6xl overflow-x-clip px-4 py-10 sm:px-6">
       <header className="mb-10">
         <div className="flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-muted-foreground">
           <span className="inline-block size-1.5 rounded-full bg-accent" />
