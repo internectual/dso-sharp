@@ -163,7 +163,7 @@ function Index() {
                     </button>
                   </div>
                 </div>
-                <pre className="max-h-[60vh] overflow-x-auto overflow-y-auto whitespace-pre px-4 py-4 font-mono text-[12.5px] leading-relaxed text-surface-foreground">
+                <pre className="max-h-[60vh] w-full max-w-full overflow-auto whitespace-pre px-4 py-4 font-mono text-[12.5px] leading-relaxed text-surface-foreground">
                   {preview}
                 </pre>
               </div>
