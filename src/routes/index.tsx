@@ -107,7 +107,7 @@ function Index() {
       >
         <input
           type="file"
-          accept=".dso,.zip,application/zip"
+          accept="*/*"
           className="sr-only"
           onChange={onInput}
         />
