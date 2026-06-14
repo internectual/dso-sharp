@@ -1772,6 +1772,13 @@ export class Builder {
       }
       children.forEach(c => node.children.push(c));
       this.objectDepth--;
+      // Top-level `new` is compiled with a leading `loadImmedUint 0` placeholder
+      // for the object-id slot. When the root EndObject fires (value=true means
+      // placeAtRoot), that placeholder is still sitting under the object node —
+      // drop it so it doesn't render as a stray `0` before the declaration.
+      if (instruction.value && this.peek() instanceof ConstantUIntNode) {
+        this.pop();
+      }
       return node;
     }
 
