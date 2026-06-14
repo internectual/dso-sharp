@@ -4,13 +4,10 @@ const bytes = new Uint8Array(readFileSync("/tmp/test.dso"));
 const data = new FileLoader().load(bytes);
 const disasm = disassemble(new BytecodeReader(data, new Ops()));
 let i = disasm.first;
-let prev: any = null;
-let count = 0;
-while (i && count < 10) {
-  if (i.constructor.name === "CreateObjectInstruction") {
-    console.log("CREATE at", i.address, "prev:", prev?.constructor.name, "value:", (prev as any)?.value);
-    count++;
+while (i) {
+  const n = i.constructor.name;
+  if (["AddObjectInstruction","EndObjectInstruction","CreateObjectInstruction","ImmediateUIntInstruction"].includes(n)) {
+    console.log(i.address, n, (i as any).value ?? "");
   }
-  prev = i;
   i = i.next;
 }
