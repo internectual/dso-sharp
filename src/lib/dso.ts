@@ -3,7 +3,7 @@
 // Full TorqueScript decompilation lives in ./decompiler.ts.
 
 import { unzipSync } from "fflate";
-import { decompile as decompileDso, isDecompileSupported } from "./decompiler";
+import { decompile as decompileDso, disassembleText, isDecompileSupported } from "./decompiler";
 
 export type GameIdentifier =
   | "TGE10"
