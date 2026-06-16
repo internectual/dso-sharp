@@ -375,7 +375,7 @@ function ImagePane({ result, mime }: { result: DsoFileResult; mime: string }) {
   const [url, setUrl] = useState<string>("");
   useEffect(() => {
     if (!result.bytes) return;
-    const blob = new Blob([result.bytes], { type: mime });
+    const blob = new Blob([result.bytes as BlobPart], { type: mime });
     const u = URL.createObjectURL(blob);
     urlRef.current = u;
     setUrl(u);
@@ -387,7 +387,7 @@ function ImagePane({ result, mime }: { result: DsoFileResult; mime: string }) {
 
   const download = () => {
     if (!result.bytes) return;
-    const blob = new Blob([result.bytes], { type: mime });
+    const blob = new Blob([result.bytes as BlobPart], { type: mime });
     const u = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = u;
