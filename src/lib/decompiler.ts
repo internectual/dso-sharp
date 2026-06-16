@@ -1900,3 +1900,96 @@ export function decompile(bytes: Uint8Array): DecompileResult {
     return { ok: false, error: e instanceof Error ? e.message : String(e) };
   }
 }
+
+/* ────────────────────────────────────────────────────────────────────────── *
+ * Disassembly text dump
+ * ────────────────────────────────────────────────────────────────────────── */
+export interface DisassembleTextResult {
+  ok: boolean;
+  text?: string;
+  error?: string;
+}
+
+function formatString(s: string, max = 60): string {
+  let out = "";
+  for (const ch of s) {
+    const c = ch.charCodeAt(0);
+    if (ch === "\\") out += "\\\\";
+    else if (ch === "\"") out += "\\\"";
+    else if (ch === "\n") out += "\\n";
+    else if (ch === "\r") out += "\\r";
+    else if (ch === "\t") out += "\\t";
+    else if (c < 0x20 || c === 0x7f) out += "\\x" + c.toString(16).padStart(2, "0").toUpperCase();
+    else out += ch;
+  }
+  if (out.length > max) out = out.slice(0, max) + "…";
+  return `"${out}"`;
+}
+
+function formatInstruction(inst: Instruction): string {
+  const name = OpcodeTag[inst.opcode.tag] ?? "?";
+  const parts: string[] = [];
+  if (inst instanceof FunctionInstruction) {
+    if (inst.package) parts.push(`pkg=${inst.package}`);
+    if (inst.namespace) parts.push(`${inst.namespace}::`);
+    parts.push(inst.name ?? "<anon>");
+    parts.push(`args=(${inst.arguments.map((a) => a ?? "?").join(", ")})`);
+    if (inst.hasBody) parts.push(`body end=${inst.endAddress}`);
+    else parts.push("decl");
+  } else if (inst instanceof CreateObjectInstruction) {
+    parts.push(`parent=${inst.parent ?? "<none>"}`);
+    if (inst.isDataBlock) parts.push("datablock");
+    parts.push(`failJmp=${inst.failJumpAddress}`);
+  } else if (inst instanceof AddObjectInstruction) {
+    parts.push(inst.placeAtRoot ? "root" : "child");
+  } else if (inst instanceof EndObjectInstruction) {
+    parts.push(String(inst.value));
+  } else if (inst instanceof BranchInstruction) {
+    parts.push(`→ ${inst.targetAddress}`);
+  } else if (inst instanceof ReturnInstruction) {
+    parts.push(inst.returnsValue ? "value" : "void");
+  } else if (inst instanceof VariableInstruction) {
+    parts.push(inst.name ?? "<?>");
+  } else if (inst instanceof FieldInstruction) {
+    parts.push(inst.name ?? "<?>");
+  } else if (inst instanceof ImmediateStringInstruction) {
+    parts.push(inst.isIdentifier ? `ident:${inst.value}` : formatString(inst.value));
+  } else if (inst instanceof ImmediateUIntInstruction) {
+    parts.push(String(inst.value));
+  } else if (inst instanceof ImmediateDoubleInstruction) {
+    parts.push(String(inst.value));
+  } else if (inst instanceof CallInstruction) {
+    if (inst.namespace) parts.push(`${inst.namespace}::`);
+    parts.push(inst.name ?? "<anon>");
+    parts.push(`type=${inst.callType}`);
+  } else if (inst instanceof AdvanceAppendInstruction) {
+    parts.push(formatString(inst.char));
+  } else if (inst instanceof ConvertToTypeInstruction) {
+    parts.push(`type=${TypeReq[inst.type]}`);
+  }
+  const addr = inst.address.toString().padStart(6, " ");
+  return `${addr}  ${name.padEnd(28, " ")}${parts.length ? " " + parts.join(" ") : ""}`;
+}
+
+export function disassembleText(bytes: Uint8Array): DisassembleTextResult {
+  try {
+    const loader = new FileLoader();
+    const data = loader.load(bytes);
+    const ops = new Ops();
+    const reader = new BytecodeReader(data, ops);
+    const disasm = disassemble(reader);
+    const lines: string[] = [];
+    lines.push(`; DSO version ${data.version}`);
+    lines.push(`; ${disasm.list.length} instructions, ${data.code.length} ops`);
+    lines.push(`; global strings: ${data.globalStringTable.entries.size}, function strings: ${data.functionStringTable.entries.size}`);
+    lines.push(`; global floats: ${data.globalFloatTable.values.length}, function floats: ${data.functionFloatTable.values.length}`);
+    lines.push("");
+    for (const inst of disasm.list) {
+      lines.push(formatInstruction(inst));
+    }
+    return { ok: true, text: lines.join("\n") };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : String(e) };
+  }
+}
+

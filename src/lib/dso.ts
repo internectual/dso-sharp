@@ -3,7 +3,7 @@
 // Full TorqueScript decompilation lives in ./decompiler.ts.
 
 import { unzipSync } from "fflate";
-import { decompile as decompileDso, isDecompileSupported } from "./decompiler";
+import { decompile as decompileDso, disassembleText, isDecompileSupported } from "./decompiler";
 
 export type GameIdentifier =
   | "TGE10"
@@ -170,3 +170,109 @@ function renderHexPreview(bytes: Uint8Array): string {
   }
   return lines.join("\n");
 }
+
+/* ────────────────────────────────────────────────────────────────────────── *
+ * File kind detection and content extraction
+ * ────────────────────────────────────────────────────────────────────────── */
+export type FileKind =
+  | { kind: "dso" }
+  | { kind: "image"; mime: string }
+  | { kind: "text"; language: string }
+  | { kind: "binary" };
+
+const IMAGE_MIME: Record<string, string> = {
+  png: "image/png",
+  jpg: "image/jpeg",
+  jpeg: "image/jpeg",
+  gif: "image/gif",
+  webp: "image/webp",
+  bmp: "image/bmp",
+  svg: "image/svg+xml",
+  ico: "image/x-icon",
+};
+
+const TEXT_LANG: Record<string, string> = {
+  cs: "cpp",
+  gui: "cpp",
+  mis: "cpp",
+  cpp: "cpp",
+  c: "cpp",
+  h: "cpp",
+  hpp: "cpp",
+  js: "javascript",
+  ts: "typescript",
+  json: "json",
+  xml: "markup",
+  html: "markup",
+  css: "css",
+  md: "markdown",
+  txt: "plain",
+  log: "plain",
+  ini: "ini",
+  cfg: "ini",
+};
+
+function extOf(name: string): string {
+  const base = name.split("/").pop() ?? name;
+  // Strip a single trailing .dso to inspect the inner extension (e.g. console.cs.dso → cs.dso)
+  const lower = base.toLowerCase();
+  const dot = lower.lastIndexOf(".");
+  return dot >= 0 ? lower.slice(dot + 1) : "";
+}
+
+export function detectFileKind(name: string): FileKind {
+  const ext = extOf(name);
+  if (ext === "dso") return { kind: "dso" };
+  if (IMAGE_MIME[ext]) return { kind: "image", mime: IMAGE_MIME[ext] };
+  if (TEXT_LANG[ext]) return { kind: "text", language: TEXT_LANG[ext] };
+  return { kind: "binary" };
+}
+
+/** Heuristic: returns true if a buffer looks like printable text. */
+function looksLikeText(bytes: Uint8Array): boolean {
+  const len = Math.min(bytes.length, 4096);
+  if (len === 0) return false;
+  let printable = 0;
+  for (let i = 0; i < len; i++) {
+    const b = bytes[i];
+    if (b === 0) return false;
+    if (b === 9 || b === 10 || b === 13 || (b >= 32 && b < 127) || b >= 128) printable++;
+  }
+  return printable / len > 0.85;
+}
+
+export function bytesToText(bytes: Uint8Array): string {
+  try {
+    return new TextDecoder("utf-8", { fatal: false }).decode(bytes);
+  } catch {
+    let s = "";
+    for (let i = 0; i < bytes.length; i++) s += String.fromCharCode(bytes[i]);
+    return s;
+  }
+}
+
+export function effectiveFileKind(name: string, bytes: Uint8Array | null): FileKind {
+  const k = detectFileKind(name);
+  if (k.kind !== "binary" || !bytes) return k;
+  if (looksLikeText(bytes)) return { kind: "text", language: "plain" };
+  return k;
+}
+
+/** Build only the decompiled-script text (without the header comments). */
+export function buildDecompiledOnly(result: DsoFileResult, bytes: Uint8Array | null): { ok: boolean; text: string } {
+  const supported = result.candidates.find(isDecompileSupported);
+  if (!bytes || !supported) {
+    return { ok: false, text: bytes ? renderHexPreview(bytes) : "" };
+  }
+  const out = decompileDso(bytes);
+  if (out.ok && out.source !== undefined) return { ok: true, text: out.source };
+  return { ok: false, text: `// Decompilation failed: ${out.error ?? "unknown error"}\n\n${renderHexPreview(bytes)}` };
+}
+
+export function buildDisassembly(bytes: Uint8Array | null): { ok: boolean; text: string } {
+  if (!bytes) return { ok: false, text: "" };
+  const out = disassembleText(bytes);
+  if (out.ok && out.text) return { ok: true, text: out.text };
+  return { ok: false, text: `; Disassembly failed: ${out.error ?? "unknown error"}` };
+}
+
