@@ -95,11 +95,12 @@ function Index() {
       <header className="mb-10">
         <div className="flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-muted-foreground">
           <span className="inline-block size-1.5 rounded-full bg-accent" />
-          <span>Torque bytecode tool</span>
+          <span>Torque Universal Resource Decompiler</span>
         </div>
         <h1 className="mt-3 font-mono text-3xl font-semibold tracking-tight sm:text-4xl">
-          DSO Decompiler
+          TURD
         </h1>
+
         <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
           Web port of{" "}
           <a
