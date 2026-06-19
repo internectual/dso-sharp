@@ -201,6 +201,12 @@ function PreviewPane({ result, isDark }: { result: DsoFileResult; isDark: boolea
     return <ImagePane result={result} mime={kind.mime} />;
   }
 
+  // Audio / video preview
+  if (kind.kind === "media" && result.bytes) {
+    return <MediaPane result={result} mime={kind.mime} media={kind.media} />;
+  }
+
+
   if (kind.kind === "text") {
     const text = result.bytes ? bytesToText(result.bytes) : "";
     const lang = kind.language === "plain" ? "" : kind.language;
