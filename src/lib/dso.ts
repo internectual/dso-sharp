@@ -177,6 +177,7 @@ function renderHexPreview(bytes: Uint8Array): string {
 export type FileKind =
   | { kind: "dso" }
   | { kind: "image"; mime: string }
+  | { kind: "media"; mime: string; media: "audio" | "video" }
   | { kind: "text"; language: string }
   | { kind: "binary" };
 
@@ -189,6 +190,27 @@ const IMAGE_MIME: Record<string, string> = {
   bmp: "image/bmp",
   svg: "image/svg+xml",
   ico: "image/x-icon",
+};
+
+const AUDIO_MIME: Record<string, string> = {
+  wav: "audio/wav",
+  mp3: "audio/mpeg",
+  ogg: "audio/ogg",
+  oga: "audio/ogg",
+  opus: "audio/ogg",
+  flac: "audio/flac",
+  m4a: "audio/mp4",
+  aac: "audio/aac",
+};
+
+const VIDEO_MIME: Record<string, string> = {
+  avi: "video/x-msvideo",
+  mp4: "video/mp4",
+  m4v: "video/mp4",
+  webm: "video/webm",
+  mov: "video/quicktime",
+  mkv: "video/x-matroska",
+  ogv: "video/ogg",
 };
 
 const TEXT_LANG: Record<string, string> = {
@@ -224,9 +246,12 @@ export function detectFileKind(name: string): FileKind {
   const ext = extOf(name);
   if (ext === "dso") return { kind: "dso" };
   if (IMAGE_MIME[ext]) return { kind: "image", mime: IMAGE_MIME[ext] };
+  if (AUDIO_MIME[ext]) return { kind: "media", mime: AUDIO_MIME[ext], media: "audio" };
+  if (VIDEO_MIME[ext]) return { kind: "media", mime: VIDEO_MIME[ext], media: "video" };
   if (TEXT_LANG[ext]) return { kind: "text", language: TEXT_LANG[ext] };
   return { kind: "binary" };
 }
+
 
 /** Heuristic: returns true if a buffer looks like printable text. */
 function looksLikeText(bytes: Uint8Array): boolean {

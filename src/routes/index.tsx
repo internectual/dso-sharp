@@ -15,13 +15,13 @@ import {
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "DSO Decompiler — Web" },
+      { title: "TURD — Torque Universal Resource Decompiler" },
       {
         name: "description",
         content:
           "Upload a Torque .dso bytecode file or .zip archive to detect the game version and view decompiled TorqueScript with syntax highlighting.",
       },
-      { property: "og:title", content: "DSO Decompiler — Web" },
+      { property: "og:title", content: "TURD — Torque Universal Resource Decompiler" },
       {
         property: "og:description",
         content:
@@ -31,6 +31,7 @@ export const Route = createFileRoute("/")({
   }),
   component: Index,
 });
+
 
 function useSystemDark(): boolean {
   const [dark, setDark] = useState(false);
@@ -94,11 +95,12 @@ function Index() {
       <header className="mb-10">
         <div className="flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-muted-foreground">
           <span className="inline-block size-1.5 rounded-full bg-accent" />
-          <span>Torque bytecode tool</span>
+          <span>Torque Universal Resource Decompiler</span>
         </div>
         <h1 className="mt-3 font-mono text-3xl font-semibold tracking-tight sm:text-4xl">
-          DSO Decompiler
+          TURD
         </h1>
+
         <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
           Web port of{" "}
           <a
@@ -198,6 +200,12 @@ function PreviewPane({ result, isDark }: { result: DsoFileResult; isDark: boolea
   if (kind.kind === "image" && result.bytes) {
     return <ImagePane result={result} mime={kind.mime} />;
   }
+
+  // Audio / video preview
+  if (kind.kind === "media" && result.bytes) {
+    return <MediaPane result={result} mime={kind.mime} media={kind.media} />;
+  }
+
 
   if (kind.kind === "text") {
     const text = result.bytes ? bytesToText(result.bytes) : "";
@@ -424,6 +432,68 @@ function ImagePane({ result, mime }: { result: DsoFileResult; mime: string }) {
     </div>
   );
 }
+
+function MediaPane({
+  result,
+  mime,
+  media,
+}: {
+  result: DsoFileResult;
+  mime: string;
+  media: "audio" | "video";
+}) {
+  const [url, setUrl] = useState<string>("");
+  useEffect(() => {
+    if (!result.bytes) return;
+    const blob = new Blob([result.bytes as BlobPart], { type: mime });
+    const u = URL.createObjectURL(blob);
+    setUrl(u);
+    return () => URL.revokeObjectURL(u);
+  }, [result, mime]);
+
+  const download = () => {
+    if (!url) return;
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = result.name.split("/").pop() ?? result.name;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  };
+
+  return (
+    <div className="overflow-hidden rounded-xl border bg-surface/60">
+      <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-2.5">
+        <div className="truncate font-mono text-xs uppercase tracking-widest text-muted-foreground">
+          {result.name} · {mime}
+        </div>
+        <button
+          onClick={download}
+          className="rounded-md border border-border px-2.5 py-1 font-mono text-[11px] text-muted-foreground transition-colors hover:border-accent hover:text-foreground"
+        >
+          Download
+        </button>
+      </div>
+      <div className="flex max-h-[70vh] items-center justify-center overflow-auto p-6">
+        {url && media === "audio" && (
+          <audio src={url} controls className="w-full max-w-xl">
+            Your browser does not support the audio element.
+          </audio>
+        )}
+        {url && media === "video" && (
+          <video
+            src={url}
+            controls
+            className="max-h-[60vh] max-w-full"
+          >
+            Your browser does not support the video element.
+          </video>
+        )}
+      </div>
+    </div>
+  );
+}
+
 
 function renderHexFull(bytes: Uint8Array): string {
   const lines: string[] = [];
