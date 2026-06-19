@@ -15,13 +15,13 @@ import {
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "DSO Decompiler — Web" },
+      { title: "TURD — Torque Universal Resource Decompiler" },
       {
         name: "description",
         content:
           "Upload a Torque .dso bytecode file or .zip archive to detect the game version and view decompiled TorqueScript with syntax highlighting.",
       },
-      { property: "og:title", content: "DSO Decompiler — Web" },
+      { property: "og:title", content: "TURD — Torque Universal Resource Decompiler" },
       {
         property: "og:description",
         content:
@@ -31,6 +31,7 @@ export const Route = createFileRoute("/")({
   }),
   component: Index,
 });
+
 
 function useSystemDark(): boolean {
   const [dark, setDark] = useState(false);
