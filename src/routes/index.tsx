@@ -171,7 +171,7 @@ function Index() {
           </aside>
 
           <div className="min-w-0 space-y-4">
-            {current && <VersionCard result={current} />}
+            {current && current.error !== "Not a .dso file" && <VersionCard result={current} />}
             {current && <PreviewPane result={current} isDark={isDark} />}
           </div>
         </section>
