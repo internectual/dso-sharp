@@ -93,18 +93,12 @@ function Index() {
   return (
     <main className="mx-auto min-h-screen w-full max-w-6xl overflow-x-clip px-4 py-10 sm:px-6">
       <header className="mb-10">
-        <div className="flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-muted-foreground">
+        <h1 className="font-mono text-3xl font-semibold tracking-tight sm:text-4xl">
+          TURD
+        </h1>
+        <div className="mt-2 flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-muted-foreground">
           <span className="inline-block size-1.5 rounded-full bg-accent" />
           <span>Torque Universal Resource Decompiler</span>
-        </div>
-        <div className="mt-3 flex items-end gap-6">
-          <h1 className="font-mono text-3xl font-semibold tracking-tight sm:text-4xl">
-            TURD
-          </h1>
-          <p className="max-w-md text-sm text-muted-foreground">
-            Drop a <code className="font-mono text-foreground">.dso</code> file or any
-            archive (zip, etc.) to detect the game version and view decompiled output.
-          </p>
         </div>
       </header>
 
