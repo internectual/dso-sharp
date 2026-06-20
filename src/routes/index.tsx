@@ -160,7 +160,7 @@ function Index() {
                 .dso only
               </label>
             </div>
-            <div className="max-h-[60vh] overflow-auto pr-1">
+            <div className="flex-1 overflow-auto pr-1 min-h-0">
               <FileTree
                 results={results}
                 selected={selected}
