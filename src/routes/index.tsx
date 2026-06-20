@@ -103,8 +103,7 @@ function Index() {
           </h1>
           <p className="max-w-md text-sm text-muted-foreground">
             Drop a <code className="font-mono text-foreground">.dso</code> file or any
-            archive (zip, etc.) to detect the game version it was compiled for and view
-            decompiled output.
+            archive (zip, etc.) to detect the game version and view decompiled output.
           </p>
         </div>
       </header>
