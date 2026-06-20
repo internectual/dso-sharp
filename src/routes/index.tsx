@@ -97,24 +97,16 @@ function Index() {
           <span className="inline-block size-1.5 rounded-full bg-accent" />
           <span>Torque Universal Resource Decompiler</span>
         </div>
-        <h1 className="mt-3 font-mono text-3xl font-semibold tracking-tight sm:text-4xl">
-          TURD
-        </h1>
-
-        <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-          Web port of{" "}
-          <a
-            href="https://github.com/Elletra/dso-sharp"
-            target="_blank"
-            rel="noreferrer"
-            className="text-accent underline-offset-4 hover:underline"
-          >
-            Elletra/dso-sharp
-          </a>
-          . Drop a <code className="font-mono text-foreground">.dso</code> file or any
-          archive (zip, etc.) to detect the game version it was compiled for and view
-          decompiled output.
-        </p>
+        <div className="mt-3 flex items-end gap-6">
+          <h1 className="font-mono text-3xl font-semibold tracking-tight sm:text-4xl">
+            TURD
+          </h1>
+          <p className="max-w-md text-sm text-muted-foreground">
+            Drop a <code className="font-mono text-foreground">.dso</code> file or any
+            archive (zip, etc.) to detect the game version it was compiled for and view
+            decompiled output.
+          </p>
+        </div>
       </header>
 
       <label
