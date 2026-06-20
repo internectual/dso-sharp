@@ -15,13 +15,13 @@ import {
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "TURD — Torque Universal Resource Decompiler" },
+      { title: "TURD — Torque Universal Resource Dashboard" },
       {
         name: "description",
         content:
           "Upload a Torque .dso bytecode file or .zip archive to detect the game version and view decompiled TorqueScript with syntax highlighting.",
       },
-      { property: "og:title", content: "TURD — Torque Universal Resource Decompiler" },
+      { property: "og:title", content: "TURD — Torque Universal Resource Dashboard" },
       {
         property: "og:description",
         content:
@@ -98,7 +98,7 @@ function Index() {
         </h1>
         <div className="mt-2 flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-muted-foreground">
           <span className="inline-block size-1.5 rounded-full bg-accent" />
-          <span>Torque Universal Resource Decompiler</span>
+          <span>Torque Universal Resource Dashboard</span>
         </div>
       </header>
 
