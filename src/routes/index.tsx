@@ -145,7 +145,7 @@ function Index() {
 
       {results.length > 0 && (
         <section className="mt-8 grid grid-cols-[minmax(0,1fr)] gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
-          <aside className="rounded-xl border bg-surface/60 p-3">
+          <aside className="flex flex-col rounded-xl border bg-surface/60 p-3">
             <div className="flex items-center justify-between px-2 pb-2">
               <span className="text-xs uppercase tracking-widest text-muted-foreground">
                 Archive ({results.length})
@@ -160,7 +160,7 @@ function Index() {
                 .dso only
               </label>
             </div>
-            <div className="max-h-[60vh] overflow-auto pr-1">
+            <div className="flex-1 overflow-auto pr-1 min-h-0">
               <FileTree
                 results={results}
                 selected={selected}
